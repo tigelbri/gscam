@@ -35,8 +35,9 @@ namespace gscam {
     pipeline_(NULL),
     sink_(NULL),
     camera_info_manager_(this),
-    pic_time_(4)
+    pic_time_(3)
   {
+    	
     pipeline_thread_ = std::thread([this]()
       {
         run();
@@ -75,7 +76,7 @@ namespace gscam {
     }
 
     // Get additional gscam configuration
-    declare_parameter("rate", 4);
+    declare_parameter("rate", 1.0);
     get_parameter("rate", pic_time_);
     declare_parameter("sync_sink", false);
     get_parameter("sync_sink", sync_sink_);
@@ -347,7 +348,7 @@ namespace gscam {
       } else {
           cinfo->header.stamp = this->get_clock()->now();
       }
-      RCLCPP_INFO(get_logger(), "Image time stamp: ");
+      //RCLCPP_INFO(get_logger(), "Image time stamp: ");
       if(std::difftime(std::time(nullptr), last_pic_stamp_) > pic_time_)
       { 
       	cinfo->header.frame_id = frame_id_;
