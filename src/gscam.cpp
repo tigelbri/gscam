@@ -34,7 +34,8 @@ namespace gscam {
     gsconfig_(""),
     pipeline_(NULL),
     sink_(NULL),
-    camera_info_manager_(this)
+    camera_info_manager_(this),
+    pic_time_(4)
   {
     pipeline_thread_ = std::thread([this]()
       {
@@ -74,9 +75,11 @@ namespace gscam {
     }
 
     // Get additional gscam configuration
-    declare_parameter("sync_sink", true);
+    declare_parameter("rate", 4);
+    get_parameter("rate", pic_time_);
+    declare_parameter("sync_sink", false);
     get_parameter("sync_sink", sync_sink_);
-    declare_parameter("preroll", false);
+    declare_parameter("preroll", true);
     get_parameter("preroll", preroll_);
     declare_parameter("use_gst_timestamps", false);
     get_parameter("use_gst_timestamps", use_gst_timestamps_);
@@ -91,7 +94,7 @@ namespace gscam {
     get_parameter("camera_name", camera_name_);
 
     // Get the image encoding
-    declare_parameter("image_encoding", std::string(sensor_msgs::image_encodings::RGB8));
+    declare_parameter("image_encoding", "jpeg");
     get_parameter("image_encoding", image_encoding_);
     if (image_encoding_ != sensor_msgs::image_encodings::RGB8 &&
         image_encoding_ != sensor_msgs::image_encodings::MONO8 && 
@@ -342,11 +345,13 @@ namespace gscam {
           cinfo->header.stamp = rclcpp::Time(GST_TIME_AS_USECONDS(buf->timestamp+bt)/1e6+time_offset_);
 #endif
       } else {
-          cinfo->header.stamp = now();
+          cinfo->header.stamp = this->get_clock()->now();
       }
-      // RCLCPP_INFO(get_logger(), "Image time stamp: %.3f",cinfo->header.stamp.toSec());
-      cinfo->header.frame_id = frame_id_;
-      if (image_encoding_ == "jpeg") {
+      RCLCPP_INFO(get_logger(), "Image time stamp: ");
+      if((cinfo->header.stamp - last_pic_stamp_).seconds() > pic_time_)
+      { 
+      	cinfo->header.frame_id = frame_id_;
+      	if (image_encoding_ == "jpeg") {
           sensor_msgs::msg::CompressedImage::SharedPtr img(new sensor_msgs::msg::CompressedImage());
           img->header = cinfo->header;
           img->format = "jpeg";
@@ -355,7 +360,7 @@ namespace gscam {
                   img->data.begin());
           jpeg_pub_->publish(*img);
           cinfo_pub_->publish(*cinfo);
-      } else {
+      	} else {
           // Complain if the returned buffer is smaller than we expect
           const unsigned int expected_frame_size =
               image_encoding_ == sensor_msgs::image_encodings::RGB8
@@ -395,8 +400,9 @@ namespace gscam {
 
           // Publish the image/info
           camera_pub_.publish(img, cinfo);
+      	}
+	last_pic_stamp_ = cinfo->header.stamp;
       }
-
       // Release the buffer
       if(buf) {
 #if (GST_VERSION_MAJOR == 1)

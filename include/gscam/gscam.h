@@ -55,13 +55,13 @@ namespace gscam {
 
     // ROS Inteface
     // Calibration between ros::Time and gst timestamps
-    double time_offset_;
+    double time_offset_, pic_time_;
     camera_info_manager::CameraInfoManager camera_info_manager_;
     image_transport::CameraPublisher camera_pub_;
     // Case of a jpeg only publisher
     rclcpp::Publisher<sensor_msgs::msg::CompressedImage>::SharedPtr jpeg_pub_;
     rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr cinfo_pub_;
-
+    rclcpp::Time last_pic_stamp_;
     // Poll gstreamer on a separate thread
     std::thread pipeline_thread_;
   };
