@@ -348,7 +348,7 @@ namespace gscam {
           cinfo->header.stamp = this->get_clock()->now();
       }
       RCLCPP_INFO(get_logger(), "Image time stamp: ");
-      if((this->get_clock()->now()- last_pic_stamp_).seconds() > pic_time_)
+      if(std::difftime(std::time(nullptr), last_pic_stamp_) > pic_time_)
       { 
       	cinfo->header.frame_id = frame_id_;
       	if (image_encoding_ == "jpeg") {
@@ -401,7 +401,7 @@ namespace gscam {
           // Publish the image/info
           camera_pub_.publish(img, cinfo);
       	}
-	      last_pic_stamp_ = cinfo->header.stamp;
+	      last_pic_stamp_ = std::time(nullptr);
       }
       // Release the buffer
       if(buf) {

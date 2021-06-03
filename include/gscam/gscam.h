@@ -17,6 +17,7 @@ extern "C"{
 #include <sensor_msgs/srv/set_camera_info.hpp>
 
 #include <stdexcept>
+#include <ctime>
 
 namespace gscam {
 
@@ -61,7 +62,7 @@ namespace gscam {
     // Case of a jpeg only publisher
     rclcpp::Publisher<sensor_msgs::msg::CompressedImage>::SharedPtr jpeg_pub_;
     rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr cinfo_pub_;
-    rclcpp::Time last_pic_stamp_;
+    std::time_t last_pic_stamp_;
     // Poll gstreamer on a separate thread
     std::thread pipeline_thread_;
   };
